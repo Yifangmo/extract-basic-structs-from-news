@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 from extract import DictExtractor
 from merge_.merger import DictMerger
-import extract.rule as rule
+from extract.rule.super_rule import SuperRule
+import extract.rule.rules as rule
 import inspect
 
-EDE = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
+EDE = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if issubclass(i[1], SuperRule)])
 
 def test_rule(rule, result):
     entities_sent = result["entities_sent"]

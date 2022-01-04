@@ -4,6 +4,11 @@
 import re
 from enum_field import *
 
+RULE_CONSTRUCT_ATTR_NAME = "field_name2tag_name"
+RULE_PRE_CONSTRUCT_ATTR_NAME = "attr_reobjs2field_name"
+RULE_REOBJ_ATTR_NAME = "reobj"
+RULE_ATTR_VALUE_ATTR_NAME = "reobj"
+
 class SuperRule(object):
     """
     定义一些共用的模板碎片让子类组合使用；定义一个共用的构造match_result方法让子类回调
@@ -22,63 +27,72 @@ class SuperRule(object):
         self.anychar_pattern = r"[^，；]*?"
         self.anychar_notag_pattern = r"[^，；<>]*?"
     
-    def construct(self, entities_sent: str):
-        """[summary]
+    def construct(self, entities_sent: str, attr_noun_dict):
+        """构造匹配结果
 
         Args:
             entities_sent (str): 实体句子
+            attr_noun_dict (dict): 属性名词在实体句子的span到原值的映射
 
         Returns:
             list: 返回匹配结果的结构体，结构体的各字段的值用span表示
         """
-        matches = self.reobj.finditer(entities_sent)
+        reobj = getattr(self, RULE_REOBJ_ATTR_NAME, None)
+        field_name2tag_name = getattr(self, RULE_CONSTRUCT_ATTR_NAME, None)
+        if not reobj or not field_name2tag_name:
+            return None
         match_result = []
-        if attr_handler:
-            for m in matches:
-                struct = {}
-                res = attr_handler(m)
-                for r in res:
-                    if r[1]:
-                        sp = m.span(self.field_name2tag_name[r[0]])
-                        if sp != (-1,-1):
-                            if r[0] == "investors":
-                                struct["investors"] = self.get_multi_value_idx_spans(entities_sent, sp, "<关联方>")
-                                struct["is_leading_investor"] = is_leading_investor
-                                continue
-                            if r[0]== "finacial_advisers":
-                                struct["finacial_advisers"] = self.get_multi_value_idx_spans(entities_sent, sp, "<关联方>")
-                                continue
-                            struct[r[0]] = sp
-                    else:
-                        break
-                if len(struct) > 0:
-                    mr = {"struct": struct}
-                    mr["match_span"] = m.span()
-                    mr["from_rule"] = self.__class__.__name__
-                    match_result.append(mr)
-        else:
-            for m in matches:
-                struct = {}
-                for field_name, tag_name in self.field_name2tag_name.items():
-                    sp = m.span(tag_name)
-                    if sp == (-1, -1):
-                        continue
-                    if field_name == "investors":
-                        primary_names = self.get_multi_value_idx_spans(entities_sent, sp, "<关联方>")
-                        struct["investors"] = primary_names
-                        struct["is_leading_investor"] = is_leading_investor
-                        continue
-                    struct[field_name] = sp
-                if len(struct) > 0:
-                    mr = {"struct": struct}
-                    mr["match_span"] = m.span()
-                    mr["from_rule"] = self.__class__.__name__
-                    match_result.append(mr)
+        matches = reobj.finditer(entities_sent)
+        attr_reobj2field_name = getattr(self, RULE_PRE_CONSTRUCT_ATTR_NAME, None)
+        attr_value_tag = getattr(self, RULE_ATTR_VALUE_ATTR_NAME, None)
+        for match in matches:
+            mr = None
+            if attr_reobj2field_name and attr_value_tag:
+                attr_noun_span = match.span(field_name2tag_name[ATTRIBUTE_NOUN])
+                if attr_noun_span != (-1, -1):
+                    attr_noun_content = attr_noun_dict[attr_noun_span]
+                    for attr_reobj, field_name in attr_reobj2field_name.items():
+                        new_field_name2tag_name = {k:v for k, v in field_name2tag_name.items()}
+                        if attr_reobj.search(attr_noun_content):
+                            new_field_name2tag_name[field_name] = attr_value_tag
+                            mr = self.__construct(entities_sent, match, new_field_name2tag_name)
+            else:
+                mr = self.__construct(entities_sent, match, field_name2tag_name)
+            if mr:
+                match_result.append(mr)
         return match_result
     
-    def construct_():
-        
-        pass
+    def __construct(self, entities_sent, match, field_name2tag_name):
+        is_leading_investor = True if LEADING_INVESTOR in field_name2tag_name else (False if INVESTOR in field_name2tag_name else None)
+        struct = {}
+        if is_leading_investor != None:
+            struct["is_leading_investor"] = is_leading_investor
+        for field_name, tag_name in field_name2tag_name.items():
+            sp = match.span(tag_name)
+            if sp != (-1, -1):
+                if field_name in (INVESTOR, LEADING_INVESTOR, FINANCIAL_ADVISERS):
+                    struct[enum_field_dict[field_name]] = self.get_multi_value_idx_spans(entities_sent, sp, "<关联方>")
+                    continue
+                struct[enum_field_dict[field_name]] = sp
+        if len(struct) > 0:
+            mr = {"struct": struct}
+            mr["match_span"] = match.span()
+            mr["from_rule"] = self.__class__.__name__
+            return mr
+        return None
+
+    def set_field_name2tag_name(self, __value: dict):
+        setattr(self, RULE_CONSTRUCT_ATTR_NAME, __value)
+
+    def set_attr_reobj2field_name(self, __value: dict):
+        setattr(self, RULE_PRE_CONSTRUCT_ATTR_NAME, __value)
+
+    def set_attr_value_tag_name(self, __value):
+        setattr(self, RULE_ATTR_VALUE_ATTR_NAME, __value)
+
+    def set_reobj(self, __value):
+        setattr(self, RULE_REOBJ_ATTR_NAME, __value)
+
 
     def get_multi_value_idx_spans(self, entities_sent: str, pos_span: tuple, match_for: str):
         res = []
