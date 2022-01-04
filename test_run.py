@@ -1,24 +1,10 @@
 #!/usr/bin/env python
-from extrator import EntitiesDictExtrator
+from extract import DictExtractor
+from merge_.merger import DictMerger
+import extract.rule as rule
 import inspect
-from merger import Merger
-import rules
-import requests
-import json
-from typing import *
 
-def get_ner_predict(sent):
-    """
-    Args:
-        sent: str, 要打标的句子
-    """
-    data = json.dumps({"sent": sent, "use_ner": 0})
-    r = requests.post(
-        "http://192.168.88.204:6004/run_ner_predict", data=data.encode("utf-8"))
-    res = json.loads(r.text)
-    return res
-
-EDE = EntitiesDictExtrator(*[i[1]() for i in inspect.getmembers(rules, inspect.isclass) if i[0].startswith("Rule")])
+EDE = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
 
 def test_rule(rule, result):
     entities_sent = result["entities_sent"]
@@ -27,8 +13,8 @@ def test_rule(rule, result):
     print("r.reobj: ", r.reobj)
     print(rule.__name__, "test result:", tr)
 
-def test_merge():
-    merger = Merger()
+def test_merger():
+    merger = DictMerger()
     sents = [
         "有消息称燕文物流已完成B轮数亿元融资",
         "11月30日消息，亿邦动力网获悉，据原色咨询公开的信息，跨境电商物流服务企业燕文物流日前完成数亿元新一轮人民币融资。",
@@ -46,7 +32,7 @@ def test_merge():
     print(merged)
     pass
 
-def test_gen():
+def test_extrator():
     # obj = ede("genapsys Inc.（genapsys），今天宣布已在D轮股权融资中筹集7000万美元。")
     obj = EDE("11月30日消息，亿邦动力网获悉，据原色咨询公开的信息，跨境电商物流服务企业燕文物流日前完成数亿元新一轮人民币融资。")
     # print("original_index2entities: ", obj["original_index2entities"])
@@ -57,8 +43,8 @@ def test_gen():
     pass
 
 if __name__ == "__main__":
-    test_gen()
-    # test_merge()
+    test_extrator()
+    # test_merger()
     # test1()
     
     # 多分句共用关联方

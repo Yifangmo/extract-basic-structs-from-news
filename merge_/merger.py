@@ -1,7 +1,11 @@
-from merge import MergeEngine, MAX_LENGTH_FILTER, SAVE_ALL_FILTER, KeyWrapper
+"""
+dict融合器，通过调用MergeEngine来融合，但在调用MergeEngine前需要对deal_type处理并构造合适的实参
+"""
+from merge import MergeEngine, MAX_LENGTH_FILTER, SAVE_ALL_FILTER
+from keywrappers import PrimaryNameWrapper
 import re
 
-class Merger():
+class DictMerger():
     def __init__(self):
         self.repl_deal_type_reobj = re.compile(r"(轮|次|笔|轮战略|系列轮?)?(投资|融资)|投融资")
         self.refer_deal_type_reobj = re.compile(r"(本|此|该)")
@@ -107,34 +111,3 @@ class Merger():
         for dt, mr in deal_type2match_result.items():
             res += mr
         return res
-
-class PrimaryNameWrapper(KeyWrapper):
-    def __init__(self, value: str):
-        super().__init__(value)
-        
-    def __eq__(self, __o: object):
-        if self.value == __o.value:
-            return True
-        v1 = self.value.upper()
-        v2 = __o.value.upper()
-        if v1.find(v2) != -1 or v2.find(v1) != -1:
-            return True
-        return False
-    
-    def __hash__(self) -> int:
-        return 0
-    
-    
-    def __lt__(self, __x: str) -> bool:
-        sv = self.value
-        xv = __x.value
-        if len(sv) < len(xv):
-            return False
-        elif len(sv) > len(xv):
-            return True
-        else:
-            if sv.isupper():
-                return True
-            if xv.isupper():
-                return False
-        return True
