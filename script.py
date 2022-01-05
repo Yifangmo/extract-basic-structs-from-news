@@ -332,7 +332,7 @@ def test_shuffle_sample():
         merger = DictMerger()
         extractor = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
 
-        wb = xlsxwriter.Workbook("./output/shuffle_test_result1.xlsx")
+        wb = xlsxwriter.Workbook("./output/shuffle_test_result2.xlsx")
         sh = wb.add_worksheet("最终融合结果")
         sh.set_column(0, 0, 8)
         sh.set_column(1, 1, 25)
@@ -358,18 +358,18 @@ def test_shuffle_sample():
             except:
                 errf.write(traceback.format_exc()+title+'\n\n')
             else:
-                if isinstance(merged_result, dict):
-                    merged_result = json.dumps(merged_result, ensure_ascii=False, indent=4)
-                elif merged_result:
-                    merged_result = separator.join([json.dumps(i, ensure_ascii=False, indent=4) for i in merged_result])
-                else:
-                    merged_result = ""
+                # if isinstance(merged_result, dict):
+                #     merged_result = json.dumps(merged_result, ensure_ascii=False, indent=4)
+                # elif merged_result:
+                #     merged_result = separator.join([json.dumps(i, ensure_ascii=False, indent=4) for i in merged_result])
+                # else:
+                #     merged_result = ""
                 data = []
                 data.append(newsI)
                 data.append(title)
                 data.append(separator.join(sents))
                 data.append(separator.join(labels_values))
-                data.append(merged_result)
+                data.append(json.dumps(merged_result, ensure_ascii=False, indent=4))
                 sh.write_row(i, 0, data, str_format)
             pass
         wb.close()

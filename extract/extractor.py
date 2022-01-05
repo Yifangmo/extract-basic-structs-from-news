@@ -63,7 +63,7 @@ class DictExtractor(object):
         # 获取子句index_span到实际交易类型的映射
         self.get_dtspan_dict(sentence_struct_info)
         
-        # 生成span到date的映射，优先更准确的时间
+        # 获取子句index_span(索引范围)到date的映射，优先更准确的时间
         self.get_date_span_dict(sentence_struct_info)
 
         # 将句子转为实体句子
@@ -221,9 +221,9 @@ class DictExtractor(object):
     def get_entities_sent(self, sentence_struct_info: dict):
         sent = sentence_struct_info["sent"]
         labels_indexes = sentence_struct_info["labels_indexes"]
-        # 小句原索引范围到实际交易类型的映射
+        # 子句原索引范围到实际交易类型的映射
         idxspan2real_dts = sentence_struct_info["idxspan2real_dts"]
-        # 小句原索引范围到日期信息的映射
+        # 子句原索引范围到日期信息的映射
         idxspan2dates = sentence_struct_info["idxspan2dates"]
         
         entities_sent, entities_index2original, alias, attr_noun_dict, original_index2entities = "", {}, {}, {}, {}
@@ -316,9 +316,9 @@ class DictExtractor(object):
     def adjust_field(self, sentence_struct_info):
         # 原句子
         sent = sentence_struct_info["sent"]
-        # 小句的index_span到实际交易类型的映射
+        # 子句的index_span到实际交易类型的映射
         idxspan2real_dts = sentence_struct_info["idxspan2real_dts"]
-        # 小句的index_span到日期信息的映射
+        # 子句的index_span到日期信息的映射
         idxspan2dates = sentence_struct_info["idxspan2dates"]
         # 统计已使用的交易类型标签时使用
         real_dt2label_dts = sentence_struct_info["real_dt2label_dts"]
