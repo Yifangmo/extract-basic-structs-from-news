@@ -5,7 +5,7 @@ from extract.rule.super_rule import SuperRule
 import extract.rule.rules as rule
 import inspect
 
-EDE = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if issubclass(i[1], SuperRule)])
+EDE = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
 
 def test_rule(rule, result):
     entities_sent = result["entities_sent"]
@@ -35,12 +35,12 @@ def test_merger():
 
 def test_extrator():
     # obj = ede("genapsys Inc.（genapsys），今天宣布已在D轮股权融资中筹集7000万美元。")
-    obj = EDE("11月30日消息，亿邦动力网获悉，据原色咨询公开的信息，跨境电商物流服务企业燕文物流日前完成数亿元新一轮人民币融资。")
+    obj = EDE("截至目前，教育机器人及STEAM玩教具公司珞石机器人C系列融资累计额超3亿元。")
     # print("original_index2entities: ", obj["original_index2entities"])
     # print()
     # del obj["original_index2entities"]
     print(obj)
-    # test_rule(rules.Rule18, obj)
+    test_rule(rule.Rule1, obj)
     pass
 
 if __name__ == "__main__":

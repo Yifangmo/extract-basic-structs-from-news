@@ -2,12 +2,12 @@
 所有Rule类的父类
 """
 import re
-from enum_field import *
+from extract.rule.enum_field import *
 
 RULE_CONSTRUCT_ATTR_NAME = "field_name2tag_name"
 RULE_PRE_CONSTRUCT_ATTR_NAME = "attr_reobjs2field_name"
 RULE_REOBJ_ATTR_NAME = "reobj"
-RULE_ATTR_VALUE_ATTR_NAME = "reobj"
+RULE_ATTR_VALUE_ATTR_NAME = "attr_value"
 
 class SuperRule(object):
     """
@@ -92,7 +92,6 @@ class SuperRule(object):
 
     def set_reobj(self, __value):
         setattr(self, RULE_REOBJ_ATTR_NAME, __value)
-
 
     def get_multi_value_idx_spans(self, entities_sent: str, pos_span: tuple, match_for: str):
         res = []

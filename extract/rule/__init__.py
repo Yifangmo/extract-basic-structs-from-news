@@ -1,2 +1,2 @@
-from rules import *
-from super_rule import SuperRule
+import extract.rule.rules
+import extract.rule.super_rule

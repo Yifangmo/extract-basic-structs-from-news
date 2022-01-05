@@ -2,7 +2,7 @@
 dict融合器，通过调用MergeEngine来融合，但在调用MergeEngine前需要对deal_type处理并构造合适的实参
 """
 from merge import MergeEngine, MAX_LENGTH_FILTER, SAVE_ALL_FILTER
-from keywrappers import PrimaryNameWrapper
+from merge_.keywrappers import PrimaryNameWrapper
 import re
 
 class DictMerger():

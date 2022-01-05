@@ -1,8 +1,8 @@
 """
 用于定义匹配实体句子的模板及规则。所有Rule的类名以"Rule"开头，后接编号。所有Rule类需要继承SuperRule
 """
-from super_rule import *
-from enum_field import *
+from extract.rule.super_rule import *
+from extract.rule.enum_field import *
 import re
 
 class Rule1(SuperRule):
@@ -205,7 +205,7 @@ class Rule14(SuperRule):
         return self.construct(entities_sent, attr_noun_dict)
     
 # 与金额相关的属性名词的匹配规则
-class AmountAttrNounRule(SuperRule):
+class Rule15(SuperRule):
     def __init__(self):
         super().__init__()
         self.pattern = "".join([self.financing_company_pattern[0], r"?的?", self.attr_noun_pattern[0], r"(?:已|将)?(?:达到?|为)?了?",self.deal_size_pattern[0]])
@@ -215,7 +215,7 @@ class AmountAttrNounRule(SuperRule):
             FINANCING_COMPANY: self.financing_company_pattern[2], 
             ATTRIBUTE_NOUN: self.attr_noun_pattern[1],
         })
-        self.set_attr_value_tag_name(self, self.deal_size_pattern[1])
+        self.set_attr_value_tag_name(self.deal_size_pattern[1])
         self.set_attr_reobj2field_name({
             re.compile(r"(?:总|整体|累计)?融资(?:总?金?额|规模|累计金?额)|规模"): DEAL_SIZE,
             re.compile(r"(?<!投前)估值"): POST_MONEY_VALUATION,
@@ -235,7 +235,7 @@ class Rule18(SuperRule):
         self.set_field_name2tag_name({
             ATTRIBUTE_NOUN: self.attr_noun_pattern[1],
         })
-        self.set_attr_value_tag_name(self, self.investors_pattern[1])
+        self.set_attr_value_tag_name(self.investors_pattern[1])
         self.set_attr_reobj2field_name({
             re.compile(r"投资方|投资人|投资者|投资机构|参投|跟投"): INVESTOR,
             re.compile(r"领投方?|领投机构"): LEADING_INVESTOR,
@@ -255,7 +255,7 @@ class Rule19(SuperRule):
         self.set_field_name2tag_name({
             ATTRIBUTE_NOUN: self.attr_noun_pattern[1],
         })
-        self.set_attr_value_tag_name(self, self.investors_pattern[1])
+        self.set_attr_value_tag_name(self.investors_pattern[1])
         self.set_attr_reobj2field_name({
             re.compile(r"财务顾问|融资顾问"): FINANCIAL_ADVISERS,
             re.compile(r"领投方?|领投机构"): LEADING_INVESTOR
@@ -274,7 +274,7 @@ class Rule20(SuperRule):
         self.set_field_name2tag_name({
             ATTRIBUTE_NOUN: self.attr_noun_pattern[1],
         })
-        self.set_attr_value_tag_name(self, self.investors_pattern[1])
+        self.set_attr_value_tag_name(self.investors_pattern[1])
         self.set_attr_reobj2field_name({
             re.compile(r"投资方|投资人|投资者|投资机构|参投|跟投"): INVESTOR,
             re.compile(r"领投方?|领投机构"): LEADING_INVESTOR,
@@ -293,7 +293,7 @@ class Rule21(SuperRule):
         self.set_field_name2tag_name({
             ATTRIBUTE_NOUN: self.attr_noun_pattern[1],
         })
-        self.set_attr_value_tag_name(self, self.single_rp_pattern[1])
+        self.set_attr_value_tag_name(self.single_rp_pattern[1])
         self.set_attr_reobj2field_name({re.compile(r"财务顾问|融资顾问"): FINANCIAL_ADVISERS})
 
     def __call__(self, entities_sent: str, attr_noun_dict: dict):
