@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """从句子中抽取出多个与模板匹配的结构体
 """
-from ..reqner import get_ner_predict
+from .reqner import get_ner_predict
 from extract.extractor_funcs import *
 from .labelstr import *
 import re

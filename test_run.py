@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from extract import DictExtractor
+from extract.extractor import DictExtractor
 from merge_.merger import DictMerger
 from extract.rule.super_rule import SuperRule
 import extract.rule.rules as rule
