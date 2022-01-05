@@ -135,7 +135,7 @@ def normalize_sentence(sent: str):
     # if not sent.endswith("。") or sent.endswith(("？", "！")):
         # sent = re.sub(r"(?<![A-Za-z])\s(?![A-Za-z])", "，", sent)
         # pass
-    return re.sub(r"((?<![A-Za-z])\s|\s(?![A-Za-z])|“|”|「|」|‘|’)|(,)|(;)|(:)|(\()|(\))|(<)|(>)", repl, sent)
+    return re.sub(r"((?<![A-Za-z])\s|\s(?![A-Za-z])|“|”|「|」|‘|’|\")|(,)|(;)|(:)|(\()|(\))|(<)|(>)", repl, sent)
 
 
 def get_financing_company_info(match_result, sent, entities_index2original, alias, total_labels_used):

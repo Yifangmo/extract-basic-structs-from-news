@@ -1,4 +1,5 @@
-"""ner标签的字符串常量
+"""
+ner标签的字符串常量
 """
 LABEL_RELATED_PARTY = "关联方"
 LABEL_AMOUNT = "金额"

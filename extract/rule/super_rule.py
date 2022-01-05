@@ -37,14 +37,14 @@ class SuperRule(object):
         Returns:
             list: 返回匹配结果的结构体，结构体的各字段的值用span表示
         """
-        reobj = getattr(self, RULE_REOBJ_ATTR_NAME, None)
-        field_name2tag_name = getattr(self, RULE_CONSTRUCT_ATTR_NAME, None)
-        if not reobj or not field_name2tag_name:
-            return None
+        reobj = self.get_reobj()
+        field_name2tag_name = self.get_field_name2tag_name()
         match_result = []
+        if not reobj or not field_name2tag_name:
+            return match_result
         matches = reobj.finditer(entities_sent)
-        attr_reobj2field_name = getattr(self, RULE_PRE_CONSTRUCT_ATTR_NAME, None)
-        attr_value_tag = getattr(self, RULE_ATTR_VALUE_ATTR_NAME, None)
+        attr_reobj2field_name = self.get_attr_reobj2field_name()
+        attr_value_tag = self.get_attr_value_tag_name()
         for match in matches:
             mr = None
             if attr_reobj2field_name and attr_value_tag:
@@ -83,15 +83,27 @@ class SuperRule(object):
 
     def set_field_name2tag_name(self, __value: dict):
         setattr(self, RULE_CONSTRUCT_ATTR_NAME, __value)
+        
+    def get_field_name2tag_name(self):
+        return getattr(self, RULE_CONSTRUCT_ATTR_NAME, None)
 
     def set_attr_reobj2field_name(self, __value: dict):
         setattr(self, RULE_PRE_CONSTRUCT_ATTR_NAME, __value)
+        
+    def get_attr_reobj2field_name(self):
+        return getattr(self, RULE_PRE_CONSTRUCT_ATTR_NAME, None)
 
     def set_attr_value_tag_name(self, __value):
         setattr(self, RULE_ATTR_VALUE_ATTR_NAME, __value)
+        
+    def get_attr_value_tag_name(self):
+        return getattr(self, RULE_ATTR_VALUE_ATTR_NAME, None)
 
     def set_reobj(self, __value):
         setattr(self, RULE_REOBJ_ATTR_NAME, __value)
+        
+    def get_reobj(self):
+        return getattr(self, RULE_REOBJ_ATTR_NAME, None)
 
     def get_multi_value_idx_spans(self, entities_sent: str, pos_span: tuple, match_for: str):
         res = []

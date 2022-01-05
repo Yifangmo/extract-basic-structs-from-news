@@ -34,13 +34,9 @@ def test_merger():
     pass
 
 def test_extrator():
-    # obj = ede("genapsys Inc.（genapsys），今天宣布已在D轮股权融资中筹集7000万美元。")
-    obj = EDE("截至目前，教育机器人及STEAM玩教具公司珞石机器人C系列融资累计额超3亿元。")
-    # print("original_index2entities: ", obj["original_index2entities"])
-    # print()
-    # del obj["original_index2entities"]
+    obj = EDE("36 氪获悉，AI 机器视觉装备供应商北京海研自动化科技有限公司（以下简称 \" 海研科技 \"）已于 2020 年 9 月完成数千万元 A 轮融资，本轮投资方为峰瑞资本。")
     print(obj)
-    test_rule(rule.Rule1, obj)
+    # test_rule(rule.Rule1, obj)
     pass
 
 if __name__ == "__main__":

@@ -225,8 +225,7 @@ class Rule15(SuperRule):
     def __call__(self, entities_sent: str, attr_noun_dict: dict):
         return self.construct(entities_sent, attr_noun_dict)
 
-# 与投资者和财务顾问相关的匹配规则
-class Rule18(SuperRule):
+class Rule16(SuperRule):
     def __init__(self):
         super().__init__()
         # (r"(<属性名词>)还?(?:主要)?(?:为|是|有|囊括|包括|涉及|包?含)((?:(?:<属性名词>的?)?(?:<关联方>)(?:、|和|以?及)?)+)",
@@ -245,8 +244,7 @@ class Rule18(SuperRule):
     def __call__(self, entities_sent: str, attr_noun_dict: dict):
         return self.construct(entities_sent, attr_noun_dict)
 
-# 与投资者和财务顾问相关的匹配规则
-class Rule19(SuperRule):
+class Rule17(SuperRule):
     def __init__(self):
         super().__init__()
         # r"(<属性名词>)的?((?:(?:<属性名词>的?)?(?:<关联方>)(?:、|和|以?及)?)+)"
@@ -264,8 +262,7 @@ class Rule19(SuperRule):
     def __call__(self, entities_sent: str, attr_noun_dict: dict):
         return self.construct(entities_sent, attr_noun_dict)
 
-# 与投资者和财务顾问相关的匹配规则
-class Rule20(SuperRule):
+class Rule18(SuperRule):
     def __init__(self):
         super().__init__()
         # r"((?:(?:<属性名词>的?)?(?:<关联方>)(?:、|和|以?及)?)+)等?(?:作为|在内的|等|则是|则以|(?:继续)?担?任)(<属性名词>)        self.pattern = "".join([self.attr_noun_pattern[0], r"还?(?:主要)?(?:为|是|有|囊括|包括|涉及|包?含)",self.investors_pattern[0]])
@@ -284,7 +281,7 @@ class Rule20(SuperRule):
     def __call__(self, entities_sent: str, attr_noun_dict: dict):
         return self.construct(entities_sent, attr_noun_dict)
 
-class Rule21(SuperRule):
+class Rule19(SuperRule):
     def __init__(self):
         super().__init__()
         # 投资方为云九资本、红杉资本中国、前海母基金、磐晟资产、义柏资本（财务顾问）

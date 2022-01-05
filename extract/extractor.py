@@ -75,7 +75,7 @@ class DictExtractor(object):
         for func in self.rules:
             match_result += func(entities_sent, attr_noun_dict)
         sentence_struct_info["match_result"] = match_result
-        print("match_result: ", match_result)
+        # print("match_result: ", match_result)
 
         # 将实际值对应的在实体句子上的index_span转为实际值
         self.adjust_field(sentence_struct_info)
@@ -389,10 +389,10 @@ class DictExtractor(object):
                                         investor["is_leading_investor"] = is_leading_investor
                                         investors.append(investor)
                                     nmr_struct["investors"] = investors
-                                elif k == "finacial_advisers":
+                                elif k == "financial_advisers":
                                     total_labels_used.update(v)
-                                    finacial_advisers = get_field_value(sent, entities_index2original, v)
-                                    nmr_struct["finacial_advisers"] = finacial_advisers
+                                    financial_advisers = get_field_value(sent, entities_index2original, v)
+                                    nmr_struct["financial_advisers"] = financial_advisers
                         new_match_result.append(nmr)
                         
         sentence_struct_info["total_labels_used"] = total_labels_used
