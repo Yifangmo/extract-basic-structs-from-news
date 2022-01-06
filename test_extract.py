@@ -1,46 +1,51 @@
 #!/usr/bin/env python
 from extract.extractor import DictExtractor
 from merge_.merger import DictMerger
-from extract.rule.super_rule import SuperRule
 import extract.rule.rules as rule
 import inspect
 
-EDE = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
+extractor = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
 
 def test_rule(rule, result):
     entities_sent = result["entities_sent"]
     r = rule()
-    tr = r.reobj.search(entities_sent)
+    ms = r.reobj.finditer(entities_sent)
     print("r.reobj: ", r.reobj)
-    print(rule.__name__, "test result:", tr)
+    for m in ms:
+        print(rule.__name__, "test result:", m)
 
-def test_merger():
+def test_merger(sents):
     merger = DictMerger()
-    sents = [
-        "有消息称燕文物流已完成B轮数亿元融资",
-        "11月30日消息，亿邦动力网获悉，据原色咨询公开的信息，跨境电商物流服务企业燕文物流日前完成数亿元新一轮人民币融资。",
-        "而燕文物流本轮投资由顶级投资机构君联资本领投，毅达资本等其他投资机构共同出资完成。",
-        "其中，原色咨询在本次融资交易中担任燕文物流的独家财务顾问。",
-        "针对这个融资消息，有相关人士向亿邦动力网透露，在此前，燕文跟投资方确实准备签署投资协议，但目前并不知道资金是否到账。",
-    ]
     strus = []
     for s in sents:
-        obj = EDE(s)
-        # print(obj)
-        for mr in obj["match_result"]:
-            strus.append(mr["struct"])
+        strus += extractor.get_match_results(s)
     merged = merger(strus)
     print(merged)
     pass
 
-def test_extrator():
-    obj = EDE("36 氪获悉，AI 机器视觉装备供应商北京海研自动化科技有限公司（以下简称 \" 海研科技 \"）已于 2020 年 9 月完成数千万元 A 轮融资，本轮投资方为峰瑞资本。")
-    print(obj)
-    # test_rule(rule.Rule1, obj)
+
+def test_extractor():
+    # obj = extractor("本轮融资由人保资本、国投创业和云锋基金共同领投，济峰资本，弘晖资本等专业医疗投资机构跟投，老股东如高瓴创投，泰福资本，聚明创投等亦全部参与了本轮融资。")
+    sent = "此轮融资由淡马锡领投，international financial corporation 和 IIFL 参投。"
+    obj = extractor(sent)
+    print("match_result: ")
+    print(obj["match_result"])
+    print("="*100)
+    print("sent: ")
+    print(obj["sent"])
+    print("="*100)
+    print("entities_sent: ")
+    print(obj["entities_sent"])
+    print("="*100)
+    print("labels_unused: ")
+    print(obj["labels_unused"])
+    print("="*100)
+    # print(obj)
+    # test_rule(rule.Rule24, obj)
     pass
 
 if __name__ == "__main__":
-    test_extrator()
+    test_extractor()
     # test_merger()
     # test1()
     

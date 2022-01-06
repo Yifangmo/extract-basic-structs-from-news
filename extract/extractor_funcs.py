@@ -1,4 +1,5 @@
-"""DictExtrator所调用的函数
+"""
+DictExtrator所调用的函数，例如句子规范化、根据交易类型划分分句并获取分句索引范围、根据匹配后的结果提取融资方信息等等
 """
 from .labelstr import *
 import re
@@ -37,11 +38,14 @@ def get_classified_alias(alias: set):
     Returns:
         dict: primary_name、english_name（如果有）、full_name（如果有）的dict
     """
-    invalid_reobj = re.compile(r"\d{3,}")
-    alias = {i for i in alias if not invalid_reobj.search(i)}
+    if len(alias) > 1:
+        invalid_reobj = re.compile(r"\d{3,}")
+        new_alias = {i for i in alias if not invalid_reobj.search(i)}
+        if len(new_alias)>0:
+            alias = new_alias
     en_reobj = re.compile(r"([A-Za-z\d]{3,}(?:\s[A-Za-z\d]+)*)")
     english_names = {n for n in alias if en_reobj.fullmatch(n)}
-    full_names = {n for n in alias if n.endswith(("公司","集团","基金"))}
+    full_names = {n for n in alias if n.endswith(("公司","集团","基金")) and len(n) > 6}
     primary_names = alias - english_names - full_names
     if len(primary_names) == 0:
         primary_names = full_names
@@ -88,12 +92,12 @@ def get_clause_span(sent: str, token_low_index: int, token_high_index: int, uniq
     end = end if end else l
     return begin, end
 
-def divide_real_dts_span(sent: str, idxspan2real_dts: dict, real_dt2label_dts: dict, separators: list):
+def divide_real_dts_span(sent: str, clause_span2real_dts: dict, real_dt2label_dts: dict, separators: list):
     """为出现交易类型的子句划分索引范围，子句间的分隔符是标点符号。返回的是某个子句在整个句子中的索引范围到该子句所含交易类型的映射。
 
     Args:
         sent (str): 句子
-        idxspan2real_dts (dict): 子句span到实际交易类型映射
+        clause_span2real_dts (dict): 初始子句span到实际交易类型映射
         real_dt2label_dts (dict): 交易类型实体信息
         separators (list): 分隔符列表，索引越低的优先作为划分子句的分隔符
 
@@ -101,22 +105,30 @@ def divide_real_dts_span(sent: str, idxspan2real_dts: dict, real_dt2label_dts: d
         dict: 新的子句span到实际交易类型映射
     """
     if len(separators) == 0:
-        return idxspan2real_dts
+        return clause_span2real_dts
     separator = separators.pop(0)
-    new_idxspan2real_dts = {}
-    for span, real_dts in idxspan2real_dts.items():
+    new_clause_span2real_dts = {}
+    for span, real_dts in clause_span2real_dts.items():
         if len(real_dts) == 1:
-            new_idxspan2real_dts[span] = real_dts
-            continue
+            label_dts = real_dt2label_dts[real_dts[0]]
+            count = 0
+            for label_dt in label_dts:
+                if span[0] <= label_dt[0] and span[1] >= label_dt[1]:
+                    count += 1
+            if count <= 1:
+                new_clause_span2real_dts[span] = real_dts
+                continue
         for real_dt in real_dts:
             label_dts = real_dt2label_dts[real_dt]
-            new_span = get_clause_span(sent, label_dts[0][0], label_dts[0][1], separator)
-            if new_span not in new_idxspan2real_dts:
-                new_idxspan2real_dts[new_span] = [real_dt]
-            else:
-                new_idxspan2real_dts[new_span].append(real_dt)
+            for label_dt in label_dts:
+                new_span = get_clause_span(sent, label_dt[0], label_dt[1], separator)
+                if new_span not in new_clause_span2real_dts:
+                    new_clause_span2real_dts[new_span] = [real_dt]
+                else:
+                    if real_dt not in new_clause_span2real_dts[new_span]:
+                        new_clause_span2real_dts[new_span].append(real_dt)
 
-    return divide_real_dts_span(sent, new_idxspan2real_dts, real_dt2label_dts, separators)
+    return divide_real_dts_span(sent, new_clause_span2real_dts, real_dt2label_dts, separators)
 
 def normalize_sentence(sent: str):
     """去除无关紧要的空白字符、引号等；将英文标点转换为中文标点；将标签指示符转为书名号
@@ -138,76 +150,55 @@ def normalize_sentence(sent: str):
     return re.sub(r"((?<![A-Za-z])\s|\s(?![A-Za-z])|“|”|「|」|‘|’|\")|(,)|(;)|(:)|(\()|(\))|(<)|(>)", repl, sent)
 
 
-def get_financing_company_info(match_result, sent, entities_index2original, alias, total_labels_used):
-    """从所有的match_result中获取fc信息
+def forward_extend_dtspan(sent, labels_indexes, clause_span2real_dts):
     """
-    financing_company_info = {}
-    for mr in match_result:
-        mr_struct = mr["struct"]
-        if "financing_company" in mr_struct:
-            fc_span = mr_struct["financing_company"]
-            del mr_struct["financing_company"]
-            total_labels_used.add(fc_span)
-            fc_name = get_field_value(sent, entities_index2original, fc_span)
-            fc_names = get_classified_alias(alias[fc_name])
-            fc = {}
-            for k, v in fc_names.items():
-                fc[k] = v
-            bp = None
-            if "business_profile" in mr_struct:
-                bp_span = mr_struct["business_profile"]
-                del mr_struct["business_profile"]
-                total_labels_used.add(bp_span)
-                bp = get_field_value(sent, entities_index2original, bp_span)
-            if fc_name not in financing_company_info or fc_name in financing_company_info and bp:
-                financing_company_info[fc_name] = {"business_profile": bp, "financing_company": fc} if bp else {"financing_company": fc}
-    return financing_company_info
-
-def forward_extend_dtspan(sent, labels_indexes, idxspan2real_dts):
-    """使前面未被dt_span覆盖的时间标签被其后面的dt_span覆盖，因为前面的时间很大可能是其后real_dt相关的时间
+    使前面未被dt_span覆盖的时间标签被其后面的dt_span覆盖，因为前面的时间很大可能是其后real_dt相关的时间
     """
     for i, li in enumerate(labels_indexes):
         if li[2] == LABEL_DISCLOSE_DATE or li[2] == LABEL_OCCURRENCE_DATE:
             time_span = get_clause_span(sent, li[0], li[1])
-            spans = sorted(idxspan2real_dts.keys())
+            spans = sorted(clause_span2real_dts.keys())
             for j, span in enumerate(spans):
-                real_dts = idxspan2real_dts[span]
+                real_dts = clause_span2real_dts[span]
                 if span[0] <= time_span[0] and time_span[1] <= span[1]:
                     break
                 if j == 0 and span[0] > time_span[1] or \
                     j > 0 and spans[j-1][1] < time_span[0] and span[0] > time_span[1]:
-                    del idxspan2real_dts[span]
-                    idxspan2real_dts[(time_span[0], span[1])] = real_dts
+                    del clause_span2real_dts[span]
+                    clause_span2real_dts[(time_span[0], span[1])] = real_dts
                     break
 
-def backward_extend_dtspan(sent, idxspan2real_dts, real_dt2label_dts, dt_amount_pair):
-    """向后扩展span，使所有span邻接，合并以"、"分割但无金额的span
+def backward_extend_dtspan(sent, clause_span2real_dts, real_dt2label_dts, dt_amount_pair):
     """
-    spans = sorted(idxspan2real_dts.keys())
+    向后扩展span，使所有span邻接，合并以"、"分割但无金额的span
+    """
+    spans = sorted(clause_span2real_dts.keys())
     for i, span in enumerate(spans):
-        real_dts = idxspan2real_dts[span]
+        real_dts = clause_span2real_dts[span]
+        start = 0 if i == 0 else span[0]
         if i == len(spans)-1:
-            del idxspan2real_dts[span]
-            idxspan2real_dts[(span[0], len(sent))] = real_dts
+            del clause_span2real_dts[span]
+            clause_span2real_dts[(start, len(sent))] = real_dts
             break
         if span[1] != spans[i+1][0] - 1:
-            del idxspan2real_dts[span]
-            idxspan2real_dts[(span[0], spans[i+1][0] - 1)] = real_dts
+            del clause_span2real_dts[span]
+            clause_span2real_dts[(start, spans[i+1][0] - 1)] = real_dts
             continue
-        if i > 0 and span[0] == spans[i-1][1] + 1 and sent[spans[i-1][1]] == "、":
+        if i > 0 and span[0] == spans[i-1][1] + 1 and sent[spans[i-1][1]] in ["、", "及"]:
             has_amount = False
             for real_dt in real_dts:
                 if real_dt2label_dts[real_dt][0] in dt_amount_pair:
                     has_amount = True
                     break
             if not has_amount:
-                pre_real_dts = idxspan2real_dts[spans[i-1]]
-                del idxspan2real_dts[span]
-                del idxspan2real_dts[spans[i-1]]
-                idxspan2real_dts[(spans[i-1][0], span[1])] = real_dts + pre_real_dts
+                pre_real_dts = clause_span2real_dts[spans[i-1]]
+                del clause_span2real_dts[span]
+                del clause_span2real_dts[spans[i-1]]
+                clause_span2real_dts[(spans[i-1][0], span[1])] = real_dts + pre_real_dts
        
 def get_real_dt2label_dts(sent, labels_indexes, repl_deal_type_reobj, invalid_repl_dt_reobj):
-    """获取实际交易类型到交易类型实体spans（可能一个实际交易类型对应多个交易类型实体）的映射、交易类型实体与金额对
+    """
+    获取实际交易类型到交易类型实体spans的映射（可能一个实际交易类型对应多个交易类型实体）、交易类型实体与金额对
     """
     label_dt2repl_dt = {}
     repl_dt2real_dt = {}
@@ -225,11 +216,11 @@ def get_real_dt2label_dts(sent, labels_indexes, repl_deal_type_reobj, invalid_re
                 pre_li_span = (labels_indexes[i-2][0], labels_indexes[i-2][1])
                 if pre_li_span in label_dt2repl_dt:
                     pre_repl_dt = label_dt2repl_dt[pre_li_span]
+                    del label_dt2repl_dt[pre_li_span]
                     # 新一轮2000万美元B轮融资
                     if re.search(r"[A-Za-z]", repl_dt):
                         # 将原有的 新一 替换为 B
                         label_dt2repl_dt[(li[0],li[1])] = repl_dt
-                        label_dt2repl_dt[pre_li_span] = repl_dt
                         # 删除原有的repl_dt，避免同一交易事件（real_dt）有多个repl_dt
                         del repl_dt2real_dt[pre_repl_dt]
                         # 将实际交易类型由新一轮替换为B轮融资
@@ -272,4 +263,6 @@ def get_real_dt2label_dts(sent, labels_indexes, repl_deal_type_reobj, invalid_re
                 real_dt2label_dts[real_dt] = [label_dt]
             else:
                 real_dt2label_dts[real_dt].append(label_dt)
+    # 将键改为(span[0], span[1], str)的形式
+    # real_dt2label_dts = {(v[0][0], v[0][1], k): v for k, v in real_dt2label_dts.items()}
     return real_dt2label_dts, dt_amount_pair

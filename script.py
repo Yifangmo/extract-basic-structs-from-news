@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import enum
 from os import write
 from merge_.merger import DictMerger
 import csv
@@ -7,10 +6,13 @@ from extract.extractor import DictExtractor
 import extract.extractor_funcs as extractor_funcs
 import traceback
 import xlsxwriter
-import re,json,requests
+import re
+import json
+import requests
 import extract.rule.rules as rule
 import inspect
 import random
+
 
 class MyJSONEncoder(json.JSONEncoder):
     def iterencode(self, o, _one_shot=False):
@@ -29,7 +31,8 @@ class MyJSONEncoder(json.JSONEncoder):
             if s.endswith(']'):
                 list_lvl -= 1
             yield s
-            
+
+
 def get_ner_predict(sent):
     """
     Args:
@@ -41,7 +44,8 @@ def get_ner_predict(sent):
     res = json.loads(r.text)
     return res
 
-def get_valid_content(title:str, content:str):
+
+def get_valid_content(title: str, content: str):
     req = json.dumps({"content": content, "snapshot": {"title": title}})
     resp = requests.post("http://192.168.88.203:5689/get_valid_content", req)
     res = json.loads(resp.text)
@@ -51,6 +55,7 @@ def get_valid_content(title:str, content:str):
         res = None
     return res
 
+
 def test_get_valid_content():
     title = "智达万应获得1000万元天使轮融资"
     content = "智达万应是一家专注于“大数据+交通”的企业，在国内首创“CPR交通大数据综合应用平台”，为行业用户提供整体解决方案以及运营模式，致力于让道路更畅通，确保公众出行安全。日前获得天使轮1000万元融资，正进行工商信息变更。该公司创始人王博在受访时称，在获得本轮融资后，将主要用于解决公司流动资金及智慧交通“黑科技”硬件产品研发。年内将根据公司战略发展需要，开启“天使轮+”融资，希望引入新的战略股东，力争用3-5年时间把智达万应培育称四川乃至中国西部智慧交通领域的领军型科创企业。"
@@ -59,6 +64,7 @@ def test_get_valid_content():
         for r in res:
             for s in r["sentences"]:
                 print(s)
+
 
 def normalize_sentence(sent: str):
     def repl(m):
@@ -70,9 +76,10 @@ def normalize_sentence(sent: str):
         return sent
     return re.sub(r'((?<![A-Za-z])\s|\s(?![A-Za-z])|“|”|「|」)|(,)|(;)|(:)|(\()|(\))|(<)|(>)', repl, sent)
 
+
 def get_invalid_deal_type():
     with open("./input/sample.csv", 'r') as inf, open("output/标签次数统计/invalid_er.txt", 'w+') as outf, \
-        open("output/标签次数统计/valid_er.txt", 'w') as outf1:
+            open("output/标签次数统计/valid_er.txt", 'w') as outf1:
         validate_deal_type_pattern = r".{2,}"
         reobj = re.compile(validate_deal_type_pattern, re.I)
         reader = csv.reader(inf)
@@ -90,15 +97,16 @@ def get_invalid_deal_type():
                         er = re.sub(r'\s', '', sent[li[0]:li[1]])
                         if not reobj.search(er):
                             outf.write(sent + '\n')
-                            outf.write(er+ '\n\n')
+                            outf.write(er + '\n\n')
                         else:
                             outf1.write(er+'\n')
 
 
 def get_final_result():
-    with open("./input/sample.csv", 'r') as inf , open("./output/err.log", 'w+') as errf:
+    with open("./input/sample.csv", 'r') as inf, open("./output/err.log", 'w+') as errf:
         merger = DictMerger()
-        extractor = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
+        extractor = DictExtractor(
+            *[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
 
         wb = xlsxwriter.Workbook("./output/test_result.xlsx")
         sh1 = wb.add_worksheet()
@@ -120,34 +128,38 @@ def get_final_result():
         sh3.set_column(1, 1, 25)
         sh3.set_column(2, 3, 35)
         sh3.set_column(4, 4, 50)
-        str_format = wb.add_format({'align': 'center','valign': 'vcenter', 'text_wrap': True})
+        str_format = wb.add_format(
+            {'align': 'center', 'valign': 'vcenter', 'text_wrap': True})
         reader = csv.reader(inf)
         next(reader)
-        sh1.write_row(0,0,['news_id','title','valid_sentence','ner_entities','struct','unused'], str_format)
-        sh2.write_row(0,0,['news_id','title','valid_sentence','ner_entities', 'rule_index', 'struct', 'is_valid'], str_format)
-        sh3.write_row(0,0,['news_id','title','valid_sentences','ner_entities','struct'], str_format)
+        sh1.write_row(0, 0, ['news_id', 'title', 'valid_sentence',
+                      'ner_entities', 'struct', 'unused'], str_format)
+        sh2.write_row(0, 0, ['news_id', 'title', 'valid_sentence',
+                      'ner_entities', 'rule_index', 'struct', 'is_valid'], str_format)
+        sh3.write_row(0, 0, ['news_id', 'title', 'valid_sentences',
+                      'ner_entities', 'struct'], str_format)
         sh1_row_cnt = 1
         sh2_row_cnt = 1
         cnt = 1
         unuse_labels_count = 0
         total_labels_count = 0
-        
+
         reader = list(reader)[::-1]
-        for i, row in enumerate(reader,1):
+        for i, row in enumerate(reader, 1):
             # if cnt > 100:
             #     break
-            
+
             title = row[0]
             sents = row[1].split("\n---------- \n")
             valid_sentences = row[1]
             news_structs = []
             labels_values = []
             for sent in sents:
-                
+
                 # cnt += 1
                 # if cnt > 100:
                 #     break
-                
+
                 obj = None
                 try:
                     obj = extractor(sent)
@@ -155,7 +167,7 @@ def get_final_result():
                     errf.write(traceback.format_exc()+'\n'+sent+'\n')
                 if not obj:
                     continue
-                
+
                 data = []
                 data.append(i)
                 data.append(title)
@@ -165,7 +177,8 @@ def get_final_result():
                 labels_values.append(lv_str)
                 match_result = obj["match_result"]
                 try:
-                    data.append("\n--------\n".join([json.dumps(mr["struct"], ensure_ascii=False, indent=4) for mr in match_result]))
+                    data.append(
+                        "\n--------\n".join([json.dumps(mr["struct"], ensure_ascii=False, indent=4) for mr in match_result]))
                 except:
                     print(sent)
                     print(match_result)
@@ -180,7 +193,8 @@ def get_final_result():
                     data.append(i)
                     data.append(title)
                     data.append(sent)
-                    data.append("\n".join([str(i) for i in obj["labels_value"]]))
+                    data.append("\n".join([str(i)
+                                for i in obj["labels_value"]]))
                     data.append(from_rule)
                     stru = mr["struct"]
                     data.append(json.dumps(stru, ensure_ascii=False, indent=4))
@@ -188,15 +202,17 @@ def get_final_result():
                     sh2.write_row(sh2_row_cnt, 0, data, str_format)
                     sh2_row_cnt += 1
             merged_result = None
-            try: 
+            try:
                 merged_result = merger(news_structs)
             except:
                 errf.write(traceback.format_exc()+valid_sentences+'\n\n')
             else:
                 if isinstance(merged_result, dict):
-                    merged_result = json.dumps(merged_result, ensure_ascii=False, indent=4)
+                    merged_result = json.dumps(
+                        merged_result, ensure_ascii=False, indent=4)
                 elif merged_result:
-                    merged_result = "\n--------\n".join([json.dumps(i, ensure_ascii=False, indent=4) for i in merged_result])
+                    merged_result = "\n--------\n".join(
+                        [json.dumps(i, ensure_ascii=False, indent=4) for i in merged_result])
                 else:
                     merged_result = ""
                 data = []
@@ -209,7 +225,6 @@ def get_final_result():
         print("total_labels_count: ", total_labels_count)
         print("unuse_labels_count: ", unuse_labels_count)
         wb.close()
-        
 
 
 def refine_news():
@@ -228,10 +243,13 @@ def refine_news():
         pass
     pass
 
+
 def get_multi_deal_type():
     with open("./output/valid_sentences.csv", 'r+') as inf:
-        refer_dt_reobj = re.compile(r"(?:(?:Pre-|pre-)?[A-H]\d?|天使|种子|新一|上一?|本|此|该|两|首)(?:\+)?(?:轮|次)(?:融资|投资)?", re.I)
-        validate_deal_type_reobj = re.compile(r"(((Pre-)?[A-H]\d?|天使|种子|战略|IPO|新一|上一?|本|此|该|两|首)(\++|＋+|plus)?(系列)?(轮|次)(融资|投资|投融资)?|(天使|种子|战略|风险|IPO|股权)(融资|投资|投融资)|融资|投资)", re.I)
+        refer_dt_reobj = re.compile(
+            r"(?:(?:Pre-|pre-)?[A-H]\d?|天使|种子|新一|上一?|本|此|该|两|首)(?:\+)?(?:轮|次)(?:融资|投资)?", re.I)
+        validate_deal_type_reobj = re.compile(
+            r"(((Pre-)?[A-H]\d?|天使|种子|战略|IPO|新一|上一?|本|此|该|两|首)(\++|＋+|plus)?(系列)?(轮|次)(融资|投资|投融资)?|(天使|种子|战略|风险|IPO|股权)(融资|投资|投融资)|融资|投资)", re.I)
         wb = xlsxwriter.Workbook("./output/deal_type1.xlsx")
         ws = wb.add_worksheet()
         ws.set_row(0, 30)
@@ -239,19 +257,21 @@ def get_multi_deal_type():
         ws.set_column(1, 1, 90)
         ws.set_column(2, 2, 20)
         ws.set_column(3, 3, 20)
-        str_format = wb.add_format({'align': 'center','valign': 'vcenter','text_wrap': True})
+        str_format = wb.add_format(
+            {'align': 'center', 'valign': 'vcenter', 'text_wrap': True})
         red_format = wb.add_format({'color': 'red'})
         purple_format = wb.add_format({'color': 'purple'})
-        ws.write_row(0,0,["title", "valid_sentences", "deal_types", "refer_deal_type"], str_format)
+        ws.write_row(0, 0, ["title", "valid_sentences",
+                     "deal_types", "refer_deal_type"], str_format)
         reader = csv.reader(inf)
         next(reader)
         rowidx = 1
         separator = "\n--------\n"
         for row in reader:
-            
+
             # if rowidx > 10:
             #     break
-            
+
             title = row[0]
             valid_sentences = row[1]
             vs = valid_sentences.split("\n\n")
@@ -267,7 +287,7 @@ def get_multi_deal_type():
                     continue
                 labels_indexes = resp["response"]["labels_indexes"]
                 for li in labels_indexes:
-                    
+
                     dt = s[li[0]:li[1]]
                     if li[2] == "交易类型" and validate_deal_type_reobj.search(dt):
                         dt_set.add(li[0])
@@ -282,7 +302,7 @@ def get_multi_deal_type():
                             sent_dt[s].append((li[0], li[1], True))
             if len(dt_set) <= 2:
                 continue
-            
+
             for s, dts in sent_dt_set.items():
                 if len(dts) != 1:
                     ms = refer_dt_reobj.finditer(s)
@@ -293,7 +313,7 @@ def get_multi_deal_type():
                             if s not in sent_dt:
                                 sent_dt[s] = [m.span() + (False,)]
                             else:
-                                sent_dt[s].append(m.span()+ (False,))
+                                sent_dt[s].append(m.span() + (False,))
             dt_set.clear()
             formated_strs = []
             for s, dt_idxs in sent_dt.items():
@@ -327,22 +347,25 @@ def get_multi_deal_type():
             rowidx += 1
         wb.close()
 
+
 def test_shuffle_sample():
     with open("./input/valid_sentences.csv", 'r+') as inf, open("./output/err.log", 'w+') as errf:
         merger = DictMerger()
-        extractor = DictExtractor(*[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
+        extractor = DictExtractor(
+            *[i[1]() for i in inspect.getmembers(rule, inspect.isclass) if i[0].startswith("Rule")])
 
-        wb = xlsxwriter.Workbook("./output/shuffle_test_result2.xlsx")
+        wb = xlsxwriter.Workbook("./output/shuffle_test_result3.xlsx")
         sh = wb.add_worksheet("最终融合结果")
         sh.set_column(0, 0, 8)
         sh.set_column(1, 1, 25)
         sh.set_column(2, 3, 35)
         sh.set_column(4, 4, 50)
-        str_format = wb.add_format({'align': 'center','valign': 'vcenter', 'text_wrap': True})
-        sh.write_row(0,0,['news_id','title','valid_sentences','ner_entities','struct'], str_format)
+        str_format = wb.add_format(
+            {'align': 'center', 'valign': 'vcenter', 'text_wrap': True})
+        sh.write_row(0, 0, ['news_id', 'title', 'valid_sentences',
+                     'ner_entities', 'struct'], str_format)
         reader = csv.reader(inf)
         next(reader)
-        newsI = 1
         separator = "\n--------\n"
         rows = list(reader)
         random.shuffle(rows)
@@ -353,7 +376,7 @@ def test_shuffle_sample():
             sents = content.split("\n\n")
             structs, labels_values = get_structs(sents, extractor, errf)
             merged_result = None
-            try: 
+            try:
                 merged_result = merger(structs)
             except:
                 errf.write(traceback.format_exc()+title+'\n\n')
@@ -365,15 +388,17 @@ def test_shuffle_sample():
                 # else:
                 #     merged_result = ""
                 data = []
-                data.append(newsI)
+                data.append(i)
                 data.append(title)
                 data.append(separator.join(sents))
                 data.append(separator.join(labels_values))
-                data.append(json.dumps(merged_result, ensure_ascii=False, indent=4))
+                data.append(json.dumps(merged_result,
+                            ensure_ascii=False, indent=4))
                 sh.write_row(i, 0, data, str_format)
             pass
         wb.close()
-        
+
+
 def get_structs(sents, extractor, errf):
     structs = []
     labels_values = []
@@ -382,12 +407,19 @@ def get_structs(sents, extractor, errf):
             res = extractor(sent)
             for mr in res["match_result"]:
                 structs.append(mr["struct"])
-            labels_values.append("\n".join([str(i) for i in res["labels_value"]]))
+            labels_values.append(
+                "\n".join([str(i) for i in res["labels_value"]]))
         except:
             errf.write(traceback.format_exc()+sent+'\n\n')
     return structs, labels_values
 
+
+def get_news():
+
+    pass
+
+
 if __name__ == "__main__":
-    test_shuffle_sample()
+    # test_shuffle_sample()
     # get_invalid_deal_type()
-    # get_final_result()
+    get_final_result()

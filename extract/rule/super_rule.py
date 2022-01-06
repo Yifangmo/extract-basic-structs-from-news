@@ -14,18 +14,24 @@ class SuperRule(object):
     定义一些共用的模板碎片让子类组合使用；定义一个共用的构造match_result方法让子类回调
     """
     def __init__(self):
-        self.financing_company_pattern = (r"(?:(?P<bp><融资方标签>)?(?P<fc><关联方>))", "bp", "fc")
+        self.financing_company_pattern = (r"(?P<fc><关联方>)", "fc")
+        self.may_be_financing_company_pattern = (r"(?:(?P<fc><关联方>))?", "fc")
+        self.may_be_bussiness_prof_pattern = r"(?:<融资方标签>)?"
         self.full_financing_company_pattern = (r"(?:(?P<bp><融资方标签>)(?P<fc><关联方>))", "bp", "fc")
-        self.investors_pattern = (r"(?P<i>(?:(?:<属性名词>的?)?(?:<关联方>)(?:（<属性名词>）)?(?:、|和|以?及)?)+)等?(?:机构|基金|则?(?:以|作为)?(?:<属性名词>))?", "i")
+        self.investors_pattern = (r"(?P<i>(?:(?:<属性名词>的?)?(?:<关联方>)(?:（.*?）)?(?:、(?:以?及)?|和|以?及)?)+)等?(?:机构|基金|则?(?:以|作为)?(?:<属性名词>))?", "i")
+        self.may_be_investors_pattern = (r"(?:(?P<i>(?:(?:<属性名词>的?)?(?:<关联方>)(?:（.*?）)?(?:、(?:以?及)?|和|以?及)?)+)等?(?:机构|基金|则?(?:以|作为)?(?:<属性名词>))?)?", "i")
         self.may_be_deal_size_pattern = (r"(?P<ds><金额>)?", "ds")
-        self.single_rp_pattern = (r"(?P<rp><关联方>)?", "rp")
         self.deal_size_pattern = (r"(?P<ds><金额>)", "ds")
-        self.may_be_deal_type_pattern = r"(?:<交易类型>)?"
-        self.deal_type_pattern = r"<交易类型>"
+        self.may_be_amount_deal_type_pair_pattern = (r"(?P<ds><金额>)?[^，；]{0,2}(?:<交易类型>|[投融]资)", "ds")
+        self.may_be_deal_type_pattern = r"(?:<交易类型>|[投融]资)?"
+        self.deal_type_pattern = r"(?:<交易类型>|[投融]资)"
         self.date_pattern = r"(?:<发生时间>|<披露时间>)?"
+        self.investor_pattern = (r"(?P<i><关联方>)", "i")
         self.attr_noun_pattern = (r"(?P<attr><属性名词>)", "attr")
         self.anychar_pattern = r"[^，；]*?"
         self.anychar_notag_pattern = r"[^，；<>]*?"
+        self.seperator_pattern = r"(?:[，；]|^|$)"
+        self.notag_sent_pattern = r"(?:[，；]|^|$)(?:[^，；<>]*?(?:[，；]|^|$))*"
     
     def construct(self, entities_sent: str, attr_noun_dict):
         """构造匹配结果
@@ -69,12 +75,14 @@ class SuperRule(object):
             struct["is_leading_investor"] = is_leading_investor
         for field_name, tag_name in field_name2tag_name.items():
             sp = match.span(tag_name)
+            # print(field_name, tag_name, sp)
             if sp != (-1, -1):
                 if field_name in (INVESTOR, LEADING_INVESTOR, FINANCIAL_ADVISERS):
                     struct[enum_field_dict[field_name]] = self.get_multi_value_idx_spans(entities_sent, sp, "<关联方>")
                     continue
                 struct[enum_field_dict[field_name]] = sp
         if len(struct) > 0:
+            # print("struct: ", struct)
             mr = {"struct": struct}
             mr["match_span"] = match.span()
             mr["from_rule"] = self.__class__.__name__
