@@ -5,8 +5,8 @@ from test.write_result import write_handler
 from test.write_result import extract_handler
 
 def main():
-    test(get_news_collection, write_handler)
-    # test(get_news_collection, extract_handler)
+    # test(get_news_collection, write_handler)
+    test(get_news_collection, extract_handler)
     
 if __name__ == "__main__":
     main()

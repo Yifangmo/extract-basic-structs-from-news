@@ -54,5 +54,14 @@ def get_news_collection(count=0):
             news_collection.append({"title": title, "content": content})
     return news_collection
 
+def get_test_data():
+    data = []
+    with open("./input/test_sample.txt") as inf:
+        for row in inf:
+            if row.startswith('#'):
+                break
+            if not row.startswith('-'):
+                data.append({"sent": row.strip('\n'), "use_ner": True})
+    return data
 
 

@@ -528,14 +528,14 @@ class DictExtractor(object):
         
         for cl_span, real_dts in clause_span2real_dts.items():
             if len(real_dts) > 0:
-                # 只取第一个
+                # 一个span里有多个交易类型时，只取第一个。
                 real_dt_ori_span = real_dts[0][0:2]
-                if real_dt_ori_span == (-1,-1):
+                fc_spans = list(fc_span2fc_info)
+                if real_dt_ori_span == (-1,-1) or len(fc_spans) == 0:
                     if sent_ctx and "fc_name" in sent_ctx and sent_ctx["fc_name"]:
                         fc_info = {"financing_company": {"primary_name": sent_ctx["fc_name"]}}
                         clause_span2fc_info[cl_span] = {"fc_info": fc_info, "fc_span": (-1,-1)}
-                    break
-                fc_spans = list(fc_span2fc_info)
+                    continue
                 for fc_span in fc_spans:
                     fc_info = fc_span2fc_info[fc_span]
                     fc_name = fc_info["financing_company"]["primary_name"]
@@ -556,7 +556,7 @@ class DictExtractor(object):
             pre_fc_info = list(clause_span2fc_info.values())[0]
             for cl_span in cl_spans:
                 if cl_span not in clause_span2fc_info:
-                        clause_span2fc_info[cl_span] = pre_fc_info
+                    clause_span2fc_info[cl_span] = pre_fc_info
                 else:
                     pre_fc_info = clause_span2fc_info[cl_span]
         print("clause_span2fc_info: ", clause_span2fc_info)

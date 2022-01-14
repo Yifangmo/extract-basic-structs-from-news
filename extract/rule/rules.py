@@ -260,7 +260,7 @@ class Rule18(SuperRule):
     def __init__(self):
         super().__init__()
         # r"((?:(?:<属性名词>的?)?(?:<关联方>)(?:、|和|以?及)?)+)等?(?:作为|在内的|等|则是|则以|(?:继续)?担?任)(<属性名词>)        self.pattern = "".join([self.attr_noun_pattern[0], r"还?(?:主要)?(?:为|是|有|囊括|包括|涉及|包?含)",self.investors_pattern[0]])
-        self.pattern = self.investors_pattern[0] + r"(?:作为|在内的|等|则是|则以|(?:继续)?担?任)" + self.attr_noun_pattern[0]
+        self.pattern = self.investors_pattern[0] + r"(在本次交易中)?(作为|在内的|等|则是|则以|(继续)?担?任)" + self.attr_noun_pattern[0]
         self.set_reobj(re.compile(self.pattern))
         self.set_field_name2tag_name({
             ATTRIBUTE_NOUN: self.attr_noun_pattern[1],

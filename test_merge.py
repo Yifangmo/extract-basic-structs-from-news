@@ -20,7 +20,12 @@ def test_news_extractors(sents):
     print("sents: ", sents)
     extr_res = newsextra(sents)
     merger = DictMerger()
+    print("==================================================")
+    print("extraction_results: ")
+    print(extr_res)
     merged = merger(extr_res)
+    print("==================================================")
+    print("merged_result: ")
     print(merged)
     
 
